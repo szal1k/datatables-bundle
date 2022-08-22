@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Omines\DataTablesBundle\Adapter\Doctrine\ORM;
 
 use Doctrine\ORM\Query\Expr\Comparison;
+use Doctrine\ORM\Query\Expr\Func;
 use Doctrine\ORM\QueryBuilder;
 use Omines\DataTablesBundle\Column\AbstractColumn;
 use Omines\DataTablesBundle\DataTableState;
@@ -46,8 +47,19 @@ class SearchCriteriaProvider implements QueryBuilderProcessorInterface
                         continue;
                     }
                 }
-                $search = $queryBuilder->expr()->literal($column->getRightExpr($search));
-                $queryBuilder->andWhere(new Comparison($column->getLeftExpr(), $column->getOperator(), $search));
+                        
+                switch( $column->getOperator() ) {
+                    case 'MEMBER': {
+                        $search = $column->getRightExpr($search);
+
+                        $queryBuilder->andWhere(':search MEMBER OF ' . $column->getLeftExpr())->setParameter('search', $search);
+                    } break;
+                    default: {
+                        $search = $queryBuilder->expr()->literal($column->getRightExpr($search));
+
+                        $queryBuilder->andWhere(new Comparison($column->getLeftExpr(), $column->getOperator(), $search));
+                    } break;
+                }  
             }
         }
     }
