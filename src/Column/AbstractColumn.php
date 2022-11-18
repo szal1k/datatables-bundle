@@ -105,6 +105,7 @@ abstract class AbstractColumn
         $resolver
             ->setDefaults([
                 'label' => null,
+                'label_html' => null,
                 'data' => null,
                 'field' => null,
                 'propertyPath' => null,
@@ -121,6 +122,7 @@ abstract class AbstractColumn
                 'rightExpr' => null,
             ])
             ->setAllowedTypes('label', ['null', 'string'])
+            ->setAllowedTypes('label_html', ['null', 'boolean'])
             ->setAllowedTypes('data', ['null', 'string', 'callable'])
             ->setAllowedTypes('field', ['null', 'string'])
             ->setAllowedTypes('propertyPath', ['null', 'string'])
@@ -155,7 +157,9 @@ abstract class AbstractColumn
      */
     public function getLabel()
     {
-        return $this->options['label'] ?? "{$this->dataTable->getName()}.columns.{$this->getName()}";
+        $label = $this->options['label_html'] ? htmlspecialchars_decode( $this->options['label'] ) : $this->options['label'];
+
+        return $label ?? "{$this->dataTable->getName()}.columns.{$this->getName()}";
     }
 
     /**
