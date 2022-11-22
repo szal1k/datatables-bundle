@@ -174,7 +174,7 @@ class ORMAdapter extends AbstractAdapter
         if (null !== $state->getLength()) {
             $builder
                 ->setFirstResult($state->getStart())
-                ->setMaxResults($state->getLength())
+                //->setMaxResults($state->getLength()) // to change add another var, to page length and antoher to query results limit (use to serverSide - actually not working fine)
             ;
         }
 
