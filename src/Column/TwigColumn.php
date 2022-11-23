@@ -65,6 +65,8 @@ class TwigColumn extends AbstractColumn
         $resolver
             ->setRequired('template')
             ->setAllowedTypes('template', 'string')
+            ->setOptional('templateData')
+            ->setAllowedTypes('array')
         ;
 
         return $this;
