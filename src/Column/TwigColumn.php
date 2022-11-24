@@ -52,7 +52,9 @@ class TwigColumn extends AbstractColumn
      */
     public function normalize($value)
     {
-        return $value;
+        $value = (string) $value;
+
+        return $this->isRaw() ? $value : htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE);
     }
 
     /**
@@ -61,6 +63,15 @@ class TwigColumn extends AbstractColumn
     protected function configureOptions(OptionsResolver $resolver)
     {
         parent::configureOptions($resolver);
+
+        $resolver
+            ->setDefault('operator', 'LIKE')
+            ->setDefault(
+                'rightExpr',
+                function ($value) {
+                    return '%' . $value . '%';
+                }
+            );
 
         $resolver
             ->setRequired('template')
