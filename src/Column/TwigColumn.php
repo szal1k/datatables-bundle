@@ -50,6 +50,14 @@ class TwigColumn extends AbstractColumn
     /**
      * {@inheritdoc}
      */
+    public function normalize($value)
+    {
+        return $value;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     protected function configureOptions(OptionsResolver $resolver)
     {
         parent::configureOptions($resolver);
