@@ -219,6 +219,13 @@ class DataTableState
         return $this;
     }
 
+    public function removeColumnSearch(AbstractColumn $column): self
+    {
+        unset($this->searchColumns[$column->getName()]);
+
+        return $this;
+    }
+
     public function getExporterName(): ?string
     {
         return $this->exporterName;

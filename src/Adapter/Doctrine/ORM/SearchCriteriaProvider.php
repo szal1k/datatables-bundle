@@ -38,6 +38,7 @@ class SearchCriteriaProvider implements QueryBuilderProcessorInterface
     {
         foreach ($state->getSearchColumns() as $searchInfo) {
             /** @var AbstractColumn $column */
+            
             $column = $searchInfo['column'];
             $search = $searchInfo['search'];
 
