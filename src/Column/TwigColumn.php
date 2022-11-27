@@ -63,11 +63,11 @@ class TwigColumn extends AbstractColumn
         parent::configureOptions($resolver);
 
         $resolver
-            ->setDefault('operator', 'LIKE')
+            ->setDefault('operator', '=')
             ->setDefault(
                 'rightExpr',
                 function ($value) {
-                    return '%' . $value . '%';
+                    return $value;
                 }
             );
 
