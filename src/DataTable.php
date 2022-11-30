@@ -320,6 +320,12 @@ class DataTable
                         'searchable' => $column->isSearchable(),
                         'visible' => $column->isVisible(),
                         'className' => $column->getClassName(),
+                        'render' => "function (data, type, row) {
+                            if (type === 'filter') {
+                              return data.replace(/<[^>]*>?/gm, '');
+                            }
+                            return data;
+                          }"
                     ];
                 }, $this->getColumns()
             ),
