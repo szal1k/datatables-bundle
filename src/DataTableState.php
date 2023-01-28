@@ -236,4 +236,9 @@ class DataTableState
     {
         return $this->exporterName;
     }
+
+    public function isDisplayArchived(): ?bool
+    {
+        return $this->displayArchived;
+    }
 }
