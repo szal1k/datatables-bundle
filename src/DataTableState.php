@@ -52,6 +52,9 @@ class DataTableState
     /** @var ?string */
     private $exporterName = null;
 
+    /** @var bool */
+    private $displayArchived = false;
+
     /**
      * DataTableState constructor.
      */
@@ -81,6 +84,9 @@ class DataTableState
      */
     public function applyParameters(ParameterBag $parameters): void
     {
+        // custom param for REZONE
+        $this->displayArchived = $parameters->getBoolean('displayArchived', false);
+
         $this->draw = $parameters->getInt('draw');
         $this->isCallback = true;
         $this->isInitial = $parameters->getBoolean('_init', false);
