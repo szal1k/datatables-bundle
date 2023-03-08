@@ -22,7 +22,7 @@ interface DataTableExporterInterface
     /**
      * Exports the data from the DataTable to a file.
      */
-    public function export(array $columnNames, \Iterator $data, string $elements): \SplFileInfo;
+    public function export(array $columnNames, \Iterator $data): \SplFileInfo;
 
     /**
      * A unique name to identify the exporter.
