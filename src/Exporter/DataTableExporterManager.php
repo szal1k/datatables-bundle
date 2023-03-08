@@ -36,6 +36,9 @@ class DataTableExporterManager
     /** @var string */
     private $exporterName;
 
+    /** @var string */
+    private $exporterElements;
+    
     /** @var TranslatorInterface */
     private $translator;
 
@@ -48,6 +51,13 @@ class DataTableExporterManager
     public function setExporterName(string $exporterName): static
     {
         $this->exporterName = $exporterName;
+
+        return $this;
+    }
+
+    public function setExporterElements(string $exporterElements): static
+    {
+        $this->exporterElements = $exporterElements;
 
         return $this;
     }
@@ -65,7 +75,7 @@ class DataTableExporterManager
     public function getResponse(): Response
     {
         $exporter = $this->exporterCollection->getByName($this->exporterName);
-        $file = $exporter->export($this->getColumnNames(), $this->getAllData());
+        $file = $exporter->export($this->getColumnNames(), $this->getAllData(), $this->exporterElements);
 
         $response = new BinaryFileResponse($file);
         $response->deleteFileAfterSend(true);

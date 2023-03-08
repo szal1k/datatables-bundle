@@ -52,6 +52,9 @@ class DataTableState
     /** @var ?string */
     private $exporterName = null;
 
+    /** @var ?string */
+    private $exporterElements = null;
+
     /** @var bool */
     private $displayArchived = false;
 
@@ -86,6 +89,7 @@ class DataTableState
     {
         // custom param for REZONE
         $this->displayArchived = $parameters->getBoolean('displayArchived', false);
+        $this->exporterElements = $parameters->get('_elements');
 
         $this->draw = $parameters->getInt('draw');
         $this->isCallback = true;
@@ -235,6 +239,11 @@ class DataTableState
     public function getExporterName(): ?string
     {
         return $this->exporterName;
+    }
+
+    public function getExporterElements(): ?string
+    {
+        return $this->exporterElements;
     }
 
     public function isDisplayArchived(): ?bool

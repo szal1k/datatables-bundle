@@ -291,6 +291,7 @@ class DataTable
             return $this->exporterManager
                 ->setDataTable($this)
                 ->setExporterName($this->state->getExporterName())
+                ->setExporterElements($this->state->getExporterElements())
                 ->getResponse();
         }
 
