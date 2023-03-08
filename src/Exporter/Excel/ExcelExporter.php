@@ -31,7 +31,7 @@ class ExcelExporter implements DataTableExporterInterface
      *
      * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
-    public function export(array $columnNames, \Iterator $data): \SplFileInfo
+    public function export(array $columnNames, \Iterator $data, string $elements): \SplFileInfo
     {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getSheet(0);
