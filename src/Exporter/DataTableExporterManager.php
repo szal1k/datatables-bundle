@@ -36,7 +36,7 @@ class DataTableExporterManager
     /** @var string */
     private $exporterName;
 
-    /** @var string */
+    /** @var ?string */
     private $exporterElements;
     
     /** @var TranslatorInterface */
@@ -55,7 +55,7 @@ class DataTableExporterManager
         return $this;
     }
 
-    public function setExporterElements(string $exporterElements): static
+    public function setExporterElements(?string $exporterElements = null): static
     {
         $this->exporterElements = $exporterElements;
 
