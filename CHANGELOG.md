@@ -3,7 +3,54 @@ All notable changes to `omines\datatables-bundle` will be documented in this fil
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
-Nothing yet.
+### Added
+ - Support Doctrine ORM 3 and DBAL 4
+
+### Breaking
+ - Remove support for partial DQL queries in `AutomaticQueryBuilder`
+
+## [0.8.2] - 2024-03-24
+### Added
+ - Add Excel OpenSpout exporter (#332)
+
+### Fixed
+ - Make Twig columns searchable by default
+
+## [0.8.1] - 2024-02-24
+### Added
+ - Support PHPoffice v2 (#330)
+
+### Changed
+ - Adding empty string as a value and making column search parameter optional in request body (#323)
+ - Upgrade to PHPunit v11
+ - Fix deprecations in test suite
+
+## [0.8.0] - 2023-12-05
+### Breaking
+ - All interfaces and classes are now fully typed, this will likely require modifications in any custom extensions
+ - Removed `DataTablesTrait` for use in controllers
+ - EOL: Drop PHP <8.1 support
+ - EOL: Drop Symfony <6.3 support
+
+### Added
+ - Support Symfony 7.0 in dependencies
+
+### Changed
+ - Fix deprecations
+ - Add parameter and return types to all code
+ - Codebase is now at PHPstan level 8
+
+## [0.7.2] - 2023-04-24
+### Fixed
+ - #299 Fix merging of api-state and persisted state (#300)
+ - #179 Add savestate for session and storage, also keep additional GET url-parameter (#297)
+
+## [0.7.1] - 2022-12-01
+### Fixed
+ - Handle inconsistency in infinite page lengths
+
+### Changed
+ - EOL: Drop support for PHP 7
 
 ## [0.7.0] - 2022-03-16
 ### Breaking
@@ -153,7 +200,12 @@ or break any applications.
 ### Added
  - Basic functionality
 
-[Unreleased]: https://github.com/omines/datatables-bundle/compare/0.7.0...master
+[Unreleased]: https://github.com/omines/datatables-bundle/compare/0.8.2...master
+[0.8.2]: https://github.com/omines/datatables-bundle/compare/0.8.1...0.8.2
+[0.8.1]: https://github.com/omines/datatables-bundle/compare/0.8.0...0.8.1
+[0.8.0]: https://github.com/omines/datatables-bundle/compare/0.7.2...0.8.0
+[0.7.2]: https://github.com/omines/datatables-bundle/compare/0.7.1...0.7.2
+[0.7.1]: https://github.com/omines/datatables-bundle/compare/0.7.0...0.7.1
 [0.7.0]: https://github.com/omines/datatables-bundle/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/omines/datatables-bundle/compare/0.5.2...0.6.0
 [0.5.2]: https://github.com/omines/datatables-bundle/compare/0.5.1...0.5.2

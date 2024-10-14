@@ -79,6 +79,7 @@ class DataTableExporterManager
 
         $response = new BinaryFileResponse($file);
         $response->deleteFileAfterSend(true);
+        $response->headers->set('Content-Type', $exporter->getMimeType());
         $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $response->getFile()->getFilename());
 
         $this->dataTable->getEventDispatcher()->dispatch(new DataTableExporterResponseEvent($response), DataTableExporterEvents::PRE_RESPONSE);

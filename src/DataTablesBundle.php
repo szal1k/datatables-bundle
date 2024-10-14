@@ -25,19 +25,13 @@ use Symfony\Component\HttpKernel\Bundle\Bundle;
  */
 class DataTablesBundle extends Bundle
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function build(ContainerBuilder $container)
+    public function build(ContainerBuilder $container): void
     {
         parent::build($container);
 
         $container->addCompilerPass(new LocatorRegistrationPass());
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getContainerExtension(): ?ExtensionInterface
     {
         return new DataTablesExtension();

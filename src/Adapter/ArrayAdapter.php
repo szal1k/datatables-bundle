@@ -23,38 +23,32 @@ use Symfony\Component\PropertyAccess\PropertyAccessor;
  */
 class ArrayAdapter implements AdapterInterface
 {
-    /** @var array */
-    private $data = [];
+    /** @var mixed[] */
+    private array $data = [];
+    private PropertyAccessor $accessor;
 
-    /** @var PropertyAccessor */
-    private $accessor;
-
-    /**
-     * {@inheritdoc}
-     */
-    public function configure(array $options)
+    public function configure(array $options): void
     {
         $this->data = $options;
         $this->accessor = PropertyAccess::createPropertyAccessor();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getData(DataTableState $state): ResultSetInterface
     {
-        // very basic implementation of sorting
+        // Very basic implementation of sorting
         try {
-            $oc = $state->getOrderBy()[0][0]->getName();
-            $oo = \mb_strtolower($state->getOrderBy()[0][1]);
+            if (!empty($ob = $state->getOrderBy())) {
+                $oc = $ob[0][0]->getName();
+                $oo = \mb_strtolower($state->getOrderBy()[0][1]);
 
-            \usort($this->data, function ($a, $b) use ($oc, $oo) {
-                if ('desc' === $oo) {
-                    return $b[$oc] <=> $a[$oc];
-                }
+                \usort($this->data, function ($a, $b) use ($oc, $oo) {
+                    if ('desc' === $oo) {
+                        return $b[$oc] <=> $a[$oc];
+                    }
 
-                return $a[$oc] <=> $b[$oc];
-            });
+                    return $a[$oc] <=> $b[$oc];
+                });
+            }
         } catch (\Throwable $exception) {
             // ignore exception
         }
@@ -79,9 +73,11 @@ class ArrayAdapter implements AdapterInterface
     }
 
     /**
-     * @return \Generator
+     * @param mixed[][] $data
+     * @param array<string, string> $map
+     * @return \Generator<mixed[]>
      */
-    protected function processData(DataTableState $state, array $data, array $map)
+    protected function processData(DataTableState $state, array $data, array $map): \Generator
     {
         $transformer = $state->getDataTable()->getTransformer();
         $search = $state->getGlobalSearch() ?: '';
@@ -96,9 +92,11 @@ class ArrayAdapter implements AdapterInterface
     }
 
     /**
-     * @return array|null
+     * @param mixed[] $result
+     * @param array<string, string> $map
+     * @return mixed[]|null
      */
-    protected function processRow(DataTableState $state, array $result, array $map, string $search)
+    protected function processRow(DataTableState $state, array $result, array $map, string $search): ?array
     {
         $row = [];
         $match = empty($search);
