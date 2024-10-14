@@ -25,7 +25,7 @@ use OpenSpout\Writer\XLSX\Writer;
  */
 class ExcelOpenSpoutExporter implements DataTableExporterInterface
 {
-    public function export(array $columnNames, \Iterator $data): \SplFileInfo
+    public function export(array $columnNames, \Iterator $data, string $elements): \SplFileInfo
     {
         $filePath = sys_get_temp_dir() . '/' . uniqid('dt') . '.xlsx';
 
