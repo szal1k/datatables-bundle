@@ -19,7 +19,7 @@ use Omines\DataTablesBundle\Exporter\DataTableExporterInterface;
  */
 class TxtExporter implements DataTableExporterInterface
 {
-    public function export(array $columnNames, \Iterator $data, string $elements): \SplFileInfo
+    public function export(mixed $columnNames, \Iterator $data): \SplFileInfo
     {
         $filename = sys_get_temp_dir() . '/dt.txt';
         $handle = fopen($filename, 'w');

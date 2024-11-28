@@ -32,6 +32,11 @@ interface DataTableExporterInterface
     public function getMimeType(): string;
 
     /**
+     * The MIME type of the exported file.
+     */
+    public function getMimeType(): string;
+
+    /**
      * A unique name to identify the exporter.
      */
     public function getName(): string;
