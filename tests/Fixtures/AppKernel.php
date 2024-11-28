@@ -29,11 +29,11 @@ class AppKernel extends Kernel
             new \Symfony\Bundle\TwigBundle\TwigBundle(),
             new \Doctrine\Bundle\DoctrineBundle\DoctrineBundle(),
             new \Omines\DataTablesBundle\DataTablesBundle(),
-            new \Tests\Fixtures\AppBundle\AppBundle(),
+            new AppBundle\AppBundle(),
         ];
     }
 
-    public function registerContainerConfiguration(LoaderInterface $loader)
+    public function registerContainerConfiguration(LoaderInterface $loader): void
     {
         $loader->load(__DIR__ . '/config.yml');
     }

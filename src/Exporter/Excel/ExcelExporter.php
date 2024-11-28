@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Omines\DataTablesBundle\Exporter\Excel;
 
 use Omines\DataTablesBundle\Exporter\DataTableExporterInterface;
+use PhpOffice\PhpSpreadsheet\Cell\CellAddress;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Helper;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -27,9 +28,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 class ExcelExporter implements DataTableExporterInterface
 {
     /**
-     * {@inheritdoc}
-     *
-     * @throws \PhpOffice\PhpSpreadsheet\Exception
+     * @param mixed[] $columnNames
      */
     public function export(array $columnNames, \Iterator $data, string $elements): \SplFileInfo
     {
@@ -44,7 +43,7 @@ class ExcelExporter implements DataTableExporterInterface
         foreach ($data as $row) {
             $colIndex = 1;
             foreach ($row as $value) {
-                $sheet->setCellValueByColumnAndRow($colIndex++, $rowIndex, $htmlHelper->toRichTextObject($value));
+                $sheet->getCell(CellAddress::fromColumnAndRow($colIndex++, $rowIndex))->setValue($htmlHelper->toRichTextObject($value ?? ''));
             }
             ++$rowIndex;
         }
@@ -61,19 +60,19 @@ class ExcelExporter implements DataTableExporterInterface
 
     /**
      * Sets the columns width to automatically fit the contents.
-     *
-     * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
-    private function autoSizeColumnWidth(Worksheet $sheet)
+    private function autoSizeColumnWidth(Worksheet $sheet): void
     {
         foreach (range(1, Coordinate::columnIndexFromString($sheet->getHighestColumn(1))) as $column) {
             $sheet->getColumnDimension(Coordinate::stringFromColumnIndex($column))->setAutoSize(true);
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
+    public function getMimeType(): string
+    {
+        return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    }
+
     public function getName(): string
     {
         return 'excel';

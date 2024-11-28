@@ -25,10 +25,7 @@ use Omines\DataTablesBundle\DataTableTypeInterface;
  */
 class RegularPersonTableType implements DataTableTypeInterface
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function configure(DataTable $dataTable, array $optionss): void
+    public function configure(DataTable $dataTable, array $options): void
     {
         $dataTable
             ->add('firstName', TextColumn::class)

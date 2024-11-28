@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Tests\Functional;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Debug\Exception\FlattenException;
@@ -125,22 +126,23 @@ class FunctionalTest extends WebTestCase
         $this->assertStringStartsWith('Company ', $json->data[0]->company);
     }
 
-    /**
-     * @dataProvider translationProvider
-     */
+    #[DataProvider('translationProvider')]
     public function testTranslation(string $locale, string $languageProcessing, string $languageInfoFiltered): void
     {
         $this->client->request('GET', sprintf('/%s/translation', $locale));
         $this->assertSuccessful($response = $this->client->getResponse());
 
-        $content = $response->getContent();
+        $content = $response->getContent() ?: 'Empty content';
         $this->assertStringContainsString('"name":"noCDN"', $content);
         $this->assertStringNotContainsString('"options":{"language":{"url"', $content);
         $this->assertStringContainsString(sprintf('"processing":"%s"', $languageProcessing), $content);
         $this->assertStringContainsString(sprintf('"infoFiltered":"%s"', $languageInfoFiltered), $content);
     }
 
-    public function translationProvider(): array
+    /**
+     * @return string[][]
+     */
+    public static function translationProvider(): array
     {
         return [
             ['en', 'Processing...', '(filtered from _MAX_ total entries)'],
@@ -149,9 +151,7 @@ class FunctionalTest extends WebTestCase
         ];
     }
 
-    /**
-     * @dataProvider languageInCDNProvider
-     */
+    #[DataProvider('languageInCDNProvider')]
     public function testLanguageInCDN(string $locale): void
     {
         $this->client->request('GET', sprintf('/%s/translation?cdn', $locale));
@@ -162,7 +162,7 @@ class FunctionalTest extends WebTestCase
         $this->assertStringContainsString('"options":{"language":{"url"', $content);
     }
 
-    public function languageInCDNProvider(): array
+    public static function languageInCDNProvider(): array
     {
         return [
             ['en'],
@@ -171,9 +171,7 @@ class FunctionalTest extends WebTestCase
         ];
     }
 
-    /**
-     * @dataProvider languageNotInCDNProvider
-     */
+    #[DataProvider('languageNotInCDNProvider')]
     public function testLanguageNotInCDN(string $locale): void
     {
         $this->client->request('GET', sprintf('/%s/translation?cdn', $locale));
@@ -184,7 +182,7 @@ class FunctionalTest extends WebTestCase
         $this->assertStringNotContainsString('"options":{"language":{"url"', $content);
     }
 
-    public function languageNotInCDNProvider(): array
+    public static function languageNotInCDNProvider(): array
     {
         return [
             ['ua'],

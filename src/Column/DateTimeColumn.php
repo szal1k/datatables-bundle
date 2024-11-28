@@ -21,10 +21,7 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  */
 class DateTimeColumn extends AbstractColumn
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function normalize($value)
+    public function normalize(mixed $value): mixed
     {
         if (null === $value) {
             return $this->options['nullValue'];
@@ -35,7 +32,7 @@ class DateTimeColumn extends AbstractColumn
                 $value = \DateTime::createFromFormat($this->options['createFromFormat'], (string) $value);
                 if (false === $value) {
                     $errors = \DateTime::getLastErrors();
-                    throw new \Exception(implode(', ', $errors['errors'] ?: $errors['warnings']));
+                    throw new \RuntimeException($errors ? implode(', ', $errors['errors'] ?: $errors['warnings']) : 'DateTime conversion failed for unknown reasons');
                 }
             } else {
                 $value = new \DateTime((string) $value);
@@ -45,10 +42,7 @@ class DateTimeColumn extends AbstractColumn
         return $value->format($this->options['format']);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function configureOptions(OptionsResolver $resolver)
+    protected function configureOptions(OptionsResolver $resolver): static
     {
         parent::configureOptions($resolver);
 

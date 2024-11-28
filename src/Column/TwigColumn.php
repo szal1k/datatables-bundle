@@ -23,42 +23,31 @@ use Twig\Environment;
  */
 class TwigColumn extends AbstractColumn
 {
-    /** @var Environment */
-    protected $twig;
+    protected readonly Environment $twig;
 
-    /**
-     * TwigColumn constructor.
-     */
-    public function __construct(Environment $twig = null)
+    public function __construct(?Environment $twig = null)
     {
-        if (null === ($this->twig = $twig)) {
+        if (null === $twig) {
             throw new MissingDependencyException('You must have TwigBundle installed to use ' . static::class);
         }
+        $this->twig = $twig;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function render($value, $context)
+    protected function render($value, $context): mixed
     {
         return $this->twig->render($this->getTemplate(), [
             'row' => $context,
             'value' => $value,
+            'column' => $this,
         ]);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function normalize($value)
+    public function normalize(mixed $value): mixed
     {
         return $value;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function configureOptions(OptionsResolver $resolver)
+    protected function configureOptions(OptionsResolver $resolver): static
     {
         parent::configureOptions($resolver);
 
@@ -74,7 +63,13 @@ class TwigColumn extends AbstractColumn
         $resolver
             ->setRequired('template')
             ->setAllowedTypes('template', 'string')
-        ;
+            ->setDefault('operator', 'LIKE')
+            ->setDefault(
+                'rightExpr',
+                function ($value) {
+                    return '%' . $value . '%';
+                }
+            );
 
         return $this;
     }

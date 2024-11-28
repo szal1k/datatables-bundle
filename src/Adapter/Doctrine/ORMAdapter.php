@@ -31,36 +31,38 @@ use Omines\DataTablesBundle\Exception\MissingDependencyException;
 use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
+/*
+ * Help opcache.preload discover always-needed symbols
+ * @link https://github.com/omines/datatables-bundle/issues/288
+ * @link https://github.com/php/php-src/issues/10131
+ */
+interface_exists(QueryBuilderProcessorInterface::class);
+
 /**
  * ORMAdapter.
  *
  * @author Niels Keurentjes <niels.keurentjes@omines.com>
  * @author Robbert Beesems <robbert.beesems@omines.com>
+ *
+ * @phpstan-type HydrationMode AbstractQuery::HYDRATE_*
+ * @phpstan-type ORMOptions array{entity: class-string, hydrate: HydrationMode, query: QueryBuilderProcessorInterface[], criteria: QueryBuilderProcessorInterface[]}
  */
 class ORMAdapter extends AbstractAdapter
 {
-    /** @var ManagerRegistry */
-    private $registry;
+    private ManagerRegistry $registry;
+    protected EntityManager $manager;
+    protected ClassMetadata $metadata;
 
-    /** @var EntityManager */
-    protected $manager;
-
-    /** @var ClassMetadata */
-    protected $metadata;
-
-    /** @var AbstractQuery::HYDRATE_*|string|null */
-    private $hydrationMode;
+    /** @var ?HydrationMode */
+    private ?int $hydrationMode = null;
 
     /** @var QueryBuilderProcessorInterface[] */
-    private $queryBuilderProcessors;
+    private array $queryBuilderProcessors = [];
 
     /** @var QueryBuilderProcessorInterface[] */
-    protected $criteriaProcessors;
+    protected array $criteriaProcessors = [];
 
-    /**
-     * DoctrineAdapter constructor.
-     */
-    public function __construct(ManagerRegistry $registry = null)
+    public function __construct(?ManagerRegistry $registry = null)
     {
         if (null === $registry) {
             throw new MissingDependencyException('Install doctrine/doctrine-bundle to use the ORMAdapter');
@@ -71,26 +73,25 @@ class ORMAdapter extends AbstractAdapter
     }
 
     /**
-     * {@inheritdoc}
+     * @param array<string, mixed> $options
      */
-    public function configure(array $options)
+    public function configure(array $options): void
     {
         $resolver = new OptionsResolver();
         $this->configureOptions($resolver);
+
+        /** @var ORMOptions $options */
         $options = $resolver->resolve($options);
 
         $this->afterConfiguration($options);
     }
 
-    /**
-     * @param mixed $processor
-     */
-    public function addCriteriaProcessor($processor)
+    public function addCriteriaProcessor(callable|QueryBuilderProcessorInterface $processor): void
     {
         $this->criteriaProcessors[] = $this->normalizeProcessor($processor);
     }
 
-    protected function prepareQuery(AdapterQuery $query)
+    protected function prepareQuery(AdapterQuery $query): void
     {
         $state = $query->getState();
         $query->set('qb', $builder = $this->createQueryBuilder($state));
@@ -119,9 +120,9 @@ class ORMAdapter extends AbstractAdapter
     }
 
     /**
-     * @return array
+     * @return array<string, array<string|int|null, ClassMetadata|string|null>>
      */
-    protected function getAliases(AdapterQuery $query)
+    protected function getAliases(AdapterQuery $query): array
     {
         /** @var QueryBuilder $builder */
         $builder = $query->get('qb');
@@ -150,14 +151,18 @@ class ORMAdapter extends AbstractAdapter
         return $aliases;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function mapPropertyPath(AdapterQuery $query, AbstractColumn $column)
+    protected function mapPropertyPath(AdapterQuery $query, AbstractColumn $column): ?string
     {
-        return $this->mapFieldToPropertyPath($column->getField(), $query->get('aliases'));
+        if (null === ($field = $column->getField())) {
+            throw new InvalidConfigurationException(sprintf('Could not automatically map a field for column "%s"', $column->getName()));
+        }
+
+        return $this->mapFieldToPropertyPath($field, $query->get('aliases'));
     }
 
+    /**
+     * @return \Traversable<mixed[]>
+     */
     protected function getResults(AdapterQuery $query): \Traversable
     {
         /** @var QueryBuilder $builder */
@@ -167,8 +172,8 @@ class ORMAdapter extends AbstractAdapter
         // Apply definitive view state for current 'page' of the table
         foreach ($state->getOrderBy() as list($column, $direction)) {
             /** @var AbstractColumn $column */
-            if ($column->isOrderable()) {
-                $builder->addOrderBy($column->getOrderField(), $direction);
+            if ($column->isOrderable() && null !== ($order = $column->getOrderField())) {
+                $builder->addOrderBy($order, $direction);
             }
         }
         if (null !== $state->getLength()) {
@@ -182,15 +187,15 @@ class ORMAdapter extends AbstractAdapter
         $event = new ORMAdapterQueryEvent($query);
         $state->getDataTable()->getEventDispatcher()->dispatch($event, ORMAdapterEvents::PRE_QUERY);
 
-        foreach ($query->iterate([], $this->hydrationMode) as $result) {
-            yield $entity = array_values($result)[0];
-            if (Query::HYDRATE_OBJECT === $this->hydrationMode) {
+        foreach ($query->toIterable([], $this->hydrationMode) as $entity) {
+            yield $entity;
+            if (AbstractQuery::HYDRATE_OBJECT === $this->hydrationMode) {
                 $this->manager->detach($entity);
             }
         }
     }
 
-    protected function buildCriteria(QueryBuilder $queryBuilder, DataTableState $state)
+    protected function buildCriteria(QueryBuilder $queryBuilder, DataTableState $state): void
     {
         foreach ($this->criteriaProcessors as $provider) {
             $provider->process($queryBuilder, $state);
@@ -199,7 +204,6 @@ class ORMAdapter extends AbstractAdapter
 
     protected function createQueryBuilder(DataTableState $state): QueryBuilder
     {
-        /** @var QueryBuilder $queryBuilder */
         $queryBuilder = $this->manager->createQueryBuilder();
 
         // Run all query builder processors in order
@@ -210,12 +214,7 @@ class ORMAdapter extends AbstractAdapter
         return $queryBuilder;
     }
 
-    /**
-     * @param $identifier
-     *
-     * @return int
-     */
-    protected function getCount(QueryBuilder $queryBuilder, $identifier)
+    protected function getCount(QueryBuilder $queryBuilder, mixed $identifier): int
     {
         $qb = clone $queryBuilder;
 
@@ -227,19 +226,16 @@ class ORMAdapter extends AbstractAdapter
             return (int) $qb->getQuery()->getSingleScalarResult();
         } else {
             $qb->resetDQLPart('groupBy');
-            $qb->select($qb->expr()->countDistinct($identifier));
+            $qb->select($qb->expr()->countDistinct($identifier)); /* @phpstan-ignore-line */
 
             return (int) $qb->getQuery()->getSingleScalarResult();
         }
     }
 
     /**
-     * @param $identifier
      * @param Query\Expr\GroupBy[] $gbList
-     *
-     * @return bool
      */
-    protected function hasGroupByPart($identifier, array $gbList)
+    protected function hasGroupByPart(string $identifier, array $gbList): bool
     {
         foreach ($gbList as $gb) {
             if (in_array($identifier, $gb->getParts(), true)) {
@@ -251,11 +247,9 @@ class ORMAdapter extends AbstractAdapter
     }
 
     /**
-     * @param string $field
-     *
-     * @return string
+     * @param array<string, mixed[]> $aliases
      */
-    protected function mapFieldToPropertyPath($field, array $aliases = [])
+    protected function mapFieldToPropertyPath(string $field, array $aliases = []): string
     {
         $parts = explode('.', $field);
         if (count($parts) < 2) {
@@ -275,14 +269,14 @@ class ORMAdapter extends AbstractAdapter
             $current = $aliases[$origin][0];
         }
 
-        if (Query::HYDRATE_ARRAY === $this->hydrationMode) {
+        if (AbstractQuery::HYDRATE_ARRAY === $this->hydrationMode) {
             return '[' . implode('][', array_reverse($path)) . ']';
         } else {
             return implode('.', array_reverse($path));
         }
     }
 
-    protected function configureOptions(OptionsResolver $resolver)
+    protected function configureOptions(OptionsResolver $resolver): void
     {
         $providerNormalizer = function (Options $options, $value) {
             return array_map([$this, 'normalizeProcessor'], (array) $value);
@@ -306,6 +300,9 @@ class ORMAdapter extends AbstractAdapter
         ;
     }
 
+    /**
+     * @param ORMOptions $options
+     */
     protected function afterConfiguration(array $options): void
     {
         // Enable automated mode or just get the general default entity manager
@@ -325,31 +322,25 @@ class ORMAdapter extends AbstractAdapter
         $this->criteriaProcessors = $options['criteria'];
     }
 
-    /**
-     * @param callable|QueryBuilderProcessorInterface $provider
-     *
-     * @return QueryBuilderProcessorInterface
-     */
-    private function normalizeProcessor($provider)
+    private function normalizeProcessor(callable|QueryBuilderProcessorInterface $provider): QueryBuilderProcessorInterface
     {
         if ($provider instanceof QueryBuilderProcessorInterface) {
             return $provider;
         } elseif (is_callable($provider)) {
             return new class($provider) implements QueryBuilderProcessorInterface {
-                private $callable;
+                /** @var callable */
+                private mixed $callable;
 
                 public function __construct(callable $value)
                 {
                     $this->callable = $value;
                 }
 
-                public function process(QueryBuilder $queryBuilder, DataTableState $state)
+                public function process(QueryBuilder $queryBuilder, DataTableState $state): void
                 {
-                    return call_user_func($this->callable, $queryBuilder, $state);
+                    call_user_func($this->callable, $queryBuilder, $state);
                 }
             };
         }
-
-        throw new InvalidConfigurationException('Provider must be a callable or implement QueryBuilderProcessorInterface');
     }
 }

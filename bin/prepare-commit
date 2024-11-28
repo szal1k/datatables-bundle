@@ -1,0 +1,17 @@
+#!/bin/sh
+set -e
+cd $(dirname $0)/..
+
+export APP_ENV=test
+export APP_DEBUG=1
+export XDEBUG_MODE=coverage
+
+vendor/bin/php-cs-fixer fix
+vendor/bin/phpstan
+
+# Clear cache manually to avoid locking up with corrupted container
+rm -rf tests/Fixtures/var/cache/test
+php -d "zend.assertions=1" vendor/bin/phpunit --testdox --coverage-text \
+    --coverage-xml=build/coverage/coverage-xml --log-junit=build/coverage/junit.xml
+
+echo "All good, ready for commit!"

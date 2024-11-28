@@ -30,10 +30,7 @@ use Symfony\Component\DependencyInjection\ServiceLocator;
  */
 class LocatorRegistrationPass implements CompilerPassInterface
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function process(ContainerBuilder $container)
+    public function process(ContainerBuilder $container): void
     {
         $container->getDefinition(Instantiator::class)
             ->setArguments([[

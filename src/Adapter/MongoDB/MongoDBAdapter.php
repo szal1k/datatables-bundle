@@ -34,16 +34,11 @@ class MongoDBAdapter extends AbstractAdapter
         DataTable::SORT_DESCENDING => -1,
     ];
 
-    /** @var Collection */
-    private $collection;
+    private Collection $collection;
 
-    /** @var array */
-    private $filters;
+    private array $filters;
 
-    /**
-     * {@inheritdoc}
-     */
-    public function configure(array $options)
+    public function configure(array $options): void
     {
         $resolver = new OptionsResolver();
         $this->configureOptions($resolver);
@@ -53,10 +48,7 @@ class MongoDBAdapter extends AbstractAdapter
         $this->filters = $options['filters'];
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function prepareQuery(AdapterQuery $query)
+    protected function prepareQuery(AdapterQuery $query): void
     {
         foreach ($query->getState()->getDataTable()->getColumns() as $column) {
             if (null === $column->getField()) {
@@ -67,16 +59,13 @@ class MongoDBAdapter extends AbstractAdapter
         $query->setTotalRows($this->collection->count());
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function mapPropertyPath(AdapterQuery $query, AbstractColumn $column)
+    protected function mapPropertyPath(AdapterQuery $query, AbstractColumn $column): ?string
     {
         return '[' . implode('][', explode('.', $column->getField())) . ']';
     }
 
     /**
-     * {@inheritdoc}
+     * @return \Traversable<BSONDocument>
      */
     protected function getResults(AdapterQuery $query): \Traversable
     {
@@ -141,7 +130,7 @@ class MongoDBAdapter extends AbstractAdapter
                 'filters' => [],
             ])
             ->setRequired(['collection'])
-            ->setAllowedTypes('collection', \MongoDB\Collection::class)
+            ->setAllowedTypes('collection', Collection::class)
             ->setAllowedTypes('filters', 'array')
         ;
     }

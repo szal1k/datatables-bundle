@@ -21,14 +21,13 @@ use Omines\DataTablesBundle\Exporter\DataTableExporterInterface;
  */
 class CsvExporter implements DataTableExporterInterface
 {
-    /**
-     * {@inheritdoc}
-     */
     public function export(array $columnNames, \Iterator $data, string $elements): \SplFileInfo
     {
         $filePath = sys_get_temp_dir() . '/' . uniqid('dt') . '.csv';
 
-        $file = fopen($filePath, 'w');
+        if (false === ($file = fopen($filePath, 'w'))) {
+            throw new \RuntimeException('Failed to create temporary file at ' . $filePath); // @codeCoverageIgnore
+        }
 
         fputcsv($file, $columnNames);
 
@@ -41,9 +40,11 @@ class CsvExporter implements DataTableExporterInterface
         return new \SplFileInfo($filePath);
     }
 
-    /**
-     * {@inheritdoc}
-     */
+    public function getMimeType(): string
+    {
+        return 'text/csv';
+    }
+
     public function getName(): string
     {
         return 'csv';

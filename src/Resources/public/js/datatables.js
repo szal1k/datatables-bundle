@@ -15,7 +15,7 @@
     $.fn.initDataTables = function(config, options) {
 
         //Update default used url, so it reflects the current location (useful on single side apps)
-        $.fn.initDataTables.defaults.url = window.location.origin + window.location.pathname;
+        $.fn.initDataTables.defaults.url = window.location.origin + window.location.pathname + window.location.search;
 
         var root = this,
             config = $.extend({}, $.fn.initDataTables.defaults, config),
@@ -23,16 +23,33 @@
         ;
 
         // Load page state if needed
+        var stateDuration = null
+        // Load page state if needed
         switch (config.state) {
             case 'fragment':
                 state = window.location.hash;
+                state = (state.length > 1 ? deparam(state.substring(1)) : {});
                 break;
             case 'query':
                 state = window.location.search;
+                state = (state.length > 1 ? deparam(state.substring(1)) : {});
+                break;
+            case 'local':
+                stateDuration = 0
+                if (localStorage.getItem('DataTables_' + config.name + '_' + window.location.pathname) !== null) {
+                    state = JSON.parse(localStorage.getItem('DataTables_' + config.name + '_' + window.location.pathname))
+                }
+                break;
+            case 'session':
+                stateDuration = -1
+                if (sessionStorage.getItem('DataTables_' + config.name + '_' + window.location.pathname) !== null) {
+                    state = JSON.parse(sessionStorage.getItem('DataTables_' + config.name + '_' + window.location.pathname))
+                }
                 break;
         }
-        state = (state.length > 1 ? deparam(state.substr(1)) : {});
+
         var persistOptions = config.state === 'none' ? {} : {
+            stateDuration: stateDuration,
             stateSave: true,
             stateLoadCallback: function(s, cb) {
                 // Only need stateSave to expose state() function as loading lazily is not possible otherwise
@@ -60,10 +77,9 @@
                             data = null;
                             if (Object.keys(state).length) {
                                 var api = new $.fn.dataTable.Api( settings );
-                                var merged = $.extend(true, {}, api.state(), state);
-
+                                var merged = Object.assign({}, api.state(), state)
                                 api
-                                    .order(merged.order)
+                                    .order(Array.isArray(merged.order) && merged.order.length > 0 ? merged.order : api.state().order)
                                     .search(merged.search.search)
                                     .page.len(merged.length)
                                     .page(merged.start / merged.length)
@@ -86,11 +102,10 @@
                 }
 
                 root.html(data.template);
-                dt = $('table', root).DataTable(dtOpts);
+                var dt = $('table', root).DataTable(dtOpts);
                 if (config.state !== 'none') {
                     dt.on('draw.dt', function(e) {
                         var data = $.param(dt.state()).split('&');
-
                         // First draw establishes state, subsequent draws run diff on the first
                         if (!baseState) {
                             baseState = data;
@@ -102,8 +117,13 @@
                                         + '#' + decodeURIComponent(diff.join('&')));
                                     break;
                                 case 'query':
+                                    var windowLocationSearch = deparam(decodeURIComponent(diff.join('&')))
+                                    if(window.location.search !== null) {
+                                        windowLocationSearch = deparam(window.location.search.substring(1))
+                                        Object.assign(windowLocationSearch, deparam(decodeURIComponent(diff.join('&'))))
+                                    }
                                     history.replaceState(null, null, window.location.origin + window.location.pathname
-                                        + '?' + decodeURIComponent(diff.join('&') + window.location.hash));
+                                        + '?' + decodeURIComponent($.param(windowLocationSearch) + window.location.hash));
                                     break;
                             }
                         }
@@ -165,34 +185,28 @@
                         blob = new Blob([this.response], { type: type });
                     }
 
-                    if (typeof window.navigator.msSaveBlob !== 'undefined') {
-                        // IE workaround for "HTML7007: One or more blob URLs were revoked by closing the blob for which they were created. These URLs will no longer resolve as the data backing the URL has been freed."
-                        window.navigator.msSaveBlob(blob, filename);
-                    }
-                    else {
-                        const URL = window.URL || window.webkitURL;
-                        const downloadUrl = URL.createObjectURL(blob);
+                    const URL = window.URL || window.webkitURL;
+                    const downloadUrl = URL.createObjectURL(blob);
 
-                        if (filename) {
-                            // use HTML5 a[download] attribute to specify filename
-                            const a = document.createElement("a");
-                            // safari doesn't support this yet
-                            if (typeof a.download === 'undefined') {
-                                window.location = downloadUrl;
-                            }
-                            else {
-                                a.href = downloadUrl;
-                                a.download = filename;
-                                document.body.appendChild(a);
-                                a.click();
-                            }
-                        }
-                        else {
+                    if (filename) {
+                        // use HTML5 a[download] attribute to specify filename
+                        const a = document.createElement("a");
+                        // safari doesn't support this yet
+                        if (typeof a.download === 'undefined') {
                             window.location = downloadUrl;
                         }
-
-                        setTimeout(function() { URL.revokeObjectURL(downloadUrl); }, 100); // cleanup
+                        else {
+                            a.href = downloadUrl;
+                            a.download = filename;
+                            document.body.appendChild(a);
+                            a.click();
+                        }
                     }
+                    else {
+                        window.location = downloadUrl;
+                    }
+
+                    setTimeout(function() { URL.revokeObjectURL(downloadUrl); }, 100); // cleanup
                 }
             };
 
@@ -216,8 +230,8 @@
                 keys = key.split(']['),
                 keys_last = keys.length - 1;
 
-            if (/\[/.test(keys[0]) && /\]$/.test(keys[keys_last])) {
-                keys[keys_last] = keys[keys_last].replace(/\]$/, '');
+            if (/\[/.test(keys[0]) && /]$/.test(keys[keys_last])) {
+                keys[keys_last] = keys[keys_last].replace(/]$/, '');
                 keys = keys.shift().split('[').concat(keys);
                 keys_last = keys.length - 1;
             } else {

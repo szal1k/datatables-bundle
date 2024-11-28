@@ -23,10 +23,7 @@ use Twig\Extension\StringLoaderExtension;
  */
 class TwigStringColumn extends TwigColumn
 {
-    /**
-     * TwigStringColumn constructor.
-     */
-    public function __construct(Environment $twig = null)
+    public function __construct(?Environment $twig = null)
     {
         parent::__construct($twig);
 
@@ -35,9 +32,10 @@ class TwigStringColumn extends TwigColumn
         }
     }
 
-    protected function render($value, $context)
+    protected function render($value, $context): mixed
     {
         return $this->twig->render('@DataTables/Column/twig_string.html.twig', [
+            'column' => $this,
             'column_template' => $this->getTemplate(),
             'row' => $context,
             'value' => $value,

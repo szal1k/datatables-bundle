@@ -43,6 +43,14 @@ class ColumnTest extends TestCase
 
         $this->assertSame('03-04-2015', $column->transform('2015-04-03'));
         $this->assertSame('foo', $column->transform(null));
+
+        $column->initialize('test', 1, [
+            'createFromFormat' => 'foo',
+        ], $this->createDataTable()->setName('foo'));
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('format separator does not match');
+        $column->transform('2015-04-03');
     }
 
     public function testDateTimeColumnWithCreateFromFormat(): void
@@ -54,6 +62,9 @@ class ColumnTest extends TestCase
         ], $this->createDataTable()->setName('foo'));
 
         $this->assertSame('19.02.2020 22:30:34', $column->transform('2020-02-19T22:30:34+00:00'));
+
+        $this->expectExceptionMessage('four digit year');
+        $column->transform('foo.bar');
     }
 
     public function testTextColumn(): void
@@ -73,8 +84,8 @@ class ColumnTest extends TestCase
     {
         $column = new BoolColumn();
         $column->initialize('test', 1, [
-             'trueValue' => 'yes',
-             'nullValue' => '<em>null</em>',
+            'trueValue' => 'yes',
+            'nullValue' => '<em>null</em>',
         ], $this->createDataTable());
 
         $this->assertSame('yes', $column->transform(5));
@@ -118,6 +129,9 @@ class ColumnTest extends TestCase
         $this->assertFalse($column->isRaw());
         $this->assertTrue($column->isValidForSearch(684));
         $this->assertFalse($column->isValidForSearch('foo.bar'));
+
+        // Forced conversion failure
+        $this->assertSame('0', $column->normalize('foo'));
     }
 
     public function testColumnWithClosures(): void
@@ -134,6 +148,33 @@ class ColumnTest extends TestCase
 
         $this->assertFalse($column->isRaw());
         $this->assertSame('BAR', $column->transform(null));
+    }
+
+    public function testLeftRightExprColumns(): void
+    {
+        $column = new TextColumn();
+        $column->initialize('test', 1, [
+            'leftExpr' => 'foo',
+            'rightExpr' => 'bar',
+        ], $this->createDataTable());
+
+        $this->assertSame('foo', $column->getLeftExpr());
+        $this->assertSame('bar', $column->getRightExpr('fud'));
+
+        $column->initialize('test', 1, [
+            'field' => 'foo',
+            'leftExpr' => fn (string $field) => $field . 'bar',
+            'rightExpr' => fn (string $field) => $field . 'baz',
+        ], $this->createDataTable());
+
+        $this->assertSame('foobar', $column->getLeftExpr());
+        $this->assertSame('fudbaz', $column->getRightExpr('fud'));
+
+        $column->initialize('test', 1, [
+            'rightExpr' => null,
+        ], $this->createDataTable());
+
+        $this->assertSame('foo', $column->getRightExpr('foo'));
     }
 
     public function testTwigDependencyDetection(): void
